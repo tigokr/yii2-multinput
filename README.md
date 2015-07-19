@@ -54,6 +54,7 @@
         ],
     ]); ?>
 or
+    
     <?php echo $form->field($model, 'emails')->widget(\tigokr\multinput\Widget::className(), [
         'max'=>10,
         'initial_count'=>3,
