@@ -1,0 +1,18 @@
+.multiple-input-list__item {
+    margin-bottom: 5px;
+}
+
+.multiple-input-list.no-buttons .multiple-input-list__input {
+    display: block;
+    width: 100%;
+}
+
+.multiple-input-list__item .label {
+    display: block;
+    font-size: 13px;
+}
+
+.multiple-input-list__item hr {
+    margin-top: 6px;
+    margin-bottom: 12px;
+}

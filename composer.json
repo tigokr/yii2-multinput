@@ -1,0 +1,33 @@
+{
+    "name": "tigokr/yii2-multi-input",
+    "description": "This behavior makes it easy to maintain relations many-to-many in the your ActiveRecord model.",
+    "keywords": ["behavior", "active record", "yii2", "many-to-many", "relation"],
+    "homepage": "https://github.com/tigokr/yii2-multi-input",
+    "type": "yii2-behavior",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/tigokr/yii2-multi-input/issues",
+        "source": "https://github.com/tigokr/yii2-multi-input"
+    },
+    "authors": [
+        {
+            "name": "Artem Dekhtyar",
+            "email": "mail@artemdekhtyar.ru",
+            "homepage": "http://artemdekhtyar.ru"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii2": "*",
+        "codeception/codeception": "^2.1",
+        "yiisoft/yii2-bootstrap": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "tigokr\\multinput\\": ""
+        }
+    },
+    "require-dev": {
+        "yiisoft/yii2-codeception": "~2.0"
+    }
+}
