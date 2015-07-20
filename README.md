@@ -1,5 +1,7 @@
 # yii2-multinput
 
+Based on https://github.com/unclead/yii2-multiple-input
+
 ## View 
 
     <?php
