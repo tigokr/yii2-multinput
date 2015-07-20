@@ -3,7 +3,7 @@
     "description": "This behavior makes it easy to maintain relations many-to-many in the your ActiveRecord model.",
     "keywords": ["behavior", "active record", "yii2", "many-to-many", "relation"],
     "homepage": "https://github.com/tigokr/yii2-multi-input",
-    "type": "yii2-behavior",
+    "type": "yii2-extension",
     "license": "MIT",
     "support": {
         "issues": "https://github.com/tigokr/yii2-multinput/issues",

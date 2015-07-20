@@ -8,9 +8,9 @@
 
 namespace tigokr\multinput;
 
-use Codeception\Util\Debug;
 use yii\base\ErrorException;
 use yii\db\ActiveRecord;
+use yii\helpers\VarDumper;
 
 class Behavior extends \yii\base\Behavior
 {
@@ -97,11 +97,15 @@ class Behavior extends \yii\base\Behavior
         foreach ($this->relations as $list_name => $relation_config) {
             $relation_name = $relation_config['relation'];
 
-            $delete = false;
-            if (isset($relation_config['delete_related_after_delete']) && $relation_config['delete_related_after_delete'])
-                $delete = true;
 
-            $primaryModel->unlinkAll($relation_name, $delete);
+            $related_models = $primaryModel->$relation_name;
+            $primaryModel->unlinkAll($relation_name, !empty($primaryModel->getRelation($relation_name)->link->via));
+
+            if (isset($relation_config['delete_related_after_delete']) && $relation_config['delete_related_after_delete']) {
+                foreach ($related_models as $related_model) {
+                    $related_model->delete();
+                }
+            }
         }
     }
 
@@ -147,9 +151,10 @@ class Behavior extends \yii\base\Behavior
         if (!empty($related_list) && is_array($related_list)) {
             foreach ($related_list as $ord => $related_data) {
                 // check old related models
-                if (isset($related_data[$manyTablePkColumn])) {
+                if (isset($related_data[$manyTablePkColumn]) && !empty($related_data[$manyTablePkColumn])) {
                     // if exists then update
                     $related_model = $foreignModel::findOne($related_data[$manyTablePkColumn]);
+                    unset($related_data[$manyTablePkColumn]);
                 } else {
                     $className = $foreignModel::className();
                     $related_model = new $className;
@@ -164,6 +169,9 @@ class Behavior extends \yii\base\Behavior
                     $related_model->{$relation_config['order']} = $ord;
 
                 if ($related_model->validate()) {
+                    /**
+                     * TODO что то странное тут происходит
+                     */
                     $primaryModel->link($relation_name, $related_model);
                 } else {
                     foreach ($related_model->errors as $error) {
@@ -231,9 +239,17 @@ class Behavior extends \yii\base\Behavior
                 if ($related_model->save()) {
                     $cols = [];
                     // if related model consist order rule (field)
-                    if (isset($relation_config['order']))
+                    if (isset($relation_config['order'])) {
                         $cols[$relation_config['order']] = $ord;
+                    }
+                    if( isset($relation_config['additional']) && count($relation_config['additional'])>0) {
+                        foreach($relation_config['additional'] as $additional_column) {
+                            if(isset($related_data[$additional_column]))
+                                $cols[$additional_column] = $related_data[$additional_column];
+                        }
+                    }
 
+                    $primaryModel->unlink($relation_name, $related_model, true);
                     $primaryModel->link($relation_name, $related_model, $cols);
                 } else {
                     foreach ($related_model->errors as $error) {

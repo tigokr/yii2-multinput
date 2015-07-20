@@ -69,9 +69,8 @@
                     wrapper.data('multipleInput').currentIndex = wrapper.find('.multiple-input-list__item').length;
                     clearInterval(intervalID);
                 }
+                wrapper.trigger('init');
             }, 100);
-            wrapper.trigger('init');
-
         },
 
         addInput: function () {

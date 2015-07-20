@@ -16,6 +16,7 @@ use yii\bootstrap\Button;
 use yii\db\ActiveRecord;
 use yii\helpers\Html;
 use yii\helpers\Json;
+use yii\helpers\VarDumper;
 use yii\web\View;
 use yii\widgets\InputWidget;
 
@@ -253,7 +254,7 @@ class Widget extends InputWidget
 
             if (!empty($hiddenInputs)) {
                 $hiddenInputs = implode("\n", $hiddenInputs);
-                $cells[0] = preg_replace('/^(<td[^>]+>)(.*)(<\/td>)$/', '${1}' . $hiddenInputs . '$2$3', $cells[0]);
+                $cells[0] = preg_replace('/^(<td[^>]*>)(.*)/', '${1}' . $hiddenInputs . '$2', trim($cells[0]));
             }
 
             $this->template = Html::tag('tr', implode("\n", $cells), [
@@ -327,6 +328,16 @@ class Widget extends InputWidget
 
         $row = str_replace($search, $replace, $this->getRowTemplate($render_action));
 
+        /* select boxes selection */
+        $matches = [];
+        if(preg_match_all('/<select[^>]*?data\-selected\-option="(.*?)".*?<\/select>/is', $row, $matches)) {
+            foreach ($matches[0] as $k => $select) {
+                $select_replaced = preg_replace('/(value="' . $matches[1][$k] . '")([^>]*?)>/is', '${1} selected${2}>', $select);
+                $row = str_replace($select, $select_replaced, $row);
+            }
+        }
+
+
         foreach ($this->jsTemplates as $js) {
             $this->getView()->registerJs(strtr($js, ['{multiple-index}' => $index]), View::POS_READY);
         }
@@ -346,9 +357,7 @@ class Widget extends InputWidget
             $index = '{multiple-index}';
         }
         return $this->getInputNamePrefix($name) . (
-        count($this->columns) > 1
-            ? '[' . $index . '][' . $name . ']'
-            : '[' . $name . '][' . $index . ']'
+            '[' . $index . '][' . $name . ']'
         );
     }
 
