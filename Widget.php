@@ -8,7 +8,7 @@
 
 namespace tigokr\multinput;
 
-use tigokr\multinput\assets\MultinputAsset;
+use tigokr\multinput\assets\Asset;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\Model;
@@ -16,7 +16,6 @@ use yii\bootstrap\Button;
 use yii\db\ActiveRecord;
 use yii\helpers\Html;
 use yii\helpers\Json;
-use yii\helpers\VarDumper;
 use yii\web\View;
 use yii\widgets\InputWidget;
 
@@ -92,6 +91,9 @@ class Widget extends InputWidget
     {
         if ($this->min > $this->initial_count)
             $this->initial_count = $this->min;
+
+        if(empty($this->initial_count) && count($this->columns)== 1)
+            $this->initial_count= 1;
 
         $this->initData();
         $this->initColumns();
@@ -225,7 +227,7 @@ class Widget extends InputWidget
             }
         } else {
             for ($i = 0; $i < $this->initial_count; $i++) {
-                $rows[] = $this->renderRow($i . null, $i <= $this->min);
+                $rows[] = $this->renderRowTemplate($i . null, $i <= $this->min);
             }
         }
         return Html::tag('tbody', implode("\n", $rows));
@@ -267,6 +269,42 @@ class Widget extends InputWidget
         }
 
         return $this->template;
+    }
+
+    private function getRow($render_action, $data)
+    {
+
+        $row = '';
+        $cells = [];
+        $hiddenInputs = [];
+        foreach ($this->columns as $columnIndex => $column) {
+            /* @var $column Column */
+            $value = $column->prepareValue($data);
+
+            if ($column->isHiddenInput()) {
+                $hiddenInputs[] = $column->renderCellContent($value);
+            } else {
+                $cells[] = $column->renderCellContent($value);
+            }
+        }
+        if (is_null($this->max) || $this->max > 1 && $render_action) {
+            $cells[] = $this->renderActionColumn();
+        }
+
+        if (!empty($hiddenInputs)) {
+            $hiddenInputs = implode("\n", $hiddenInputs);
+            $cells[0] = preg_replace('/^(<td[^>]*>)(.*)/', '${1}' . $hiddenInputs . '$2', trim($cells[0]));
+        }
+
+        $row = Html::tag('tr', implode("\n", $cells), [
+            'class' => 'multiple-input-list__item',
+        ]);
+
+        if (is_array($this->getView()->js) && array_key_exists(View::POS_READY, $this->getView()->js)) {
+            $this->collectJsTemplates();
+        }
+
+        return $row;
     }
 
     private function collectJsTemplates()
@@ -313,7 +351,7 @@ class Widget extends InputWidget
      * @return mixed
      * @throws InvalidConfigException
      */
-    private function renderRow($index, $data = null, $render_action = true)
+    private function renderRowTemplate($index, $data = null, $render_action = true)
     {
         $btnAction = !$this->hasHeader() && $index == 0 ? self::ACTION_ADD : self::ACTION_REMOVE;
         $btnType = !$this->hasHeader() && $index == 0 ? 'btn-default' : 'btn-danger';
@@ -330,16 +368,53 @@ class Widget extends InputWidget
 
         /* select boxes selection */
         $matches = [];
-        if(preg_match_all('/<select[^>]*?data\-selected\-option="(.*?)".*?<\/select>/is', $row, $matches)) {
+        if (preg_match_all('/<select[^>]*?data\-selected\-option="(.*?)".*?<\/select>/is', $row, $matches)) {
             foreach ($matches[0] as $k => $select) {
                 $select_replaced = preg_replace('/(value="' . $matches[1][$k] . '")([^>]*?)>/is', '${1} selected${2}>', $select);
                 $row = str_replace($select, $select_replaced, $row);
             }
         }
 
+        foreach ($this->jsTemplates as $js) {
+            $this->getView()->registerJs(str_replace(['%7Bmultiple-index%7D', '{multiple-index}'], $index, $js), View::POS_READY);
+        }
+        return $row;
+    }
+
+    /**
+     * Renders the row.
+     *
+     * @param int $index
+     * @param ActiveRecord|array $data
+     * @return mixed
+     * @throws InvalidConfigException
+     */
+    private function renderRow($index, $data = null, $render_action = true)
+    {
+        $btnAction = !$this->hasHeader() && $index == 0 ? self::ACTION_ADD : self::ACTION_REMOVE;
+        $btnType = !$this->hasHeader() && $index == 0 ? 'btn-default' : 'btn-danger';
+        $search = ['{multiple-index}', '{multiple-btn-action}', '{multiple-btn-type}'];
+        $replace = [$index, $btnAction, $btnType];
+
+//        foreach ($this->columns as $column) {
+//            /* @var $column Column */
+//            $search[] = '{multiple-' . $column->name . '-value}';
+//            $replace[] = $column->prepareValue($data);
+//        }
+
+        $row = str_replace($search, $replace, $this->getRow($render_action, $data));
+
+        /* select boxes selection */
+        $matches = [];
+        if (preg_match_all('/<select[^>]*?data\-selected\-option="(.*?)".*?<\/select>/is', $row, $matches)) {
+            foreach ($matches[0] as $k => $select) {
+                $select_replaced = preg_replace('/(value="' . $matches[1][$k] . '")([^>]*?)>/is', '${1} selected${2}>', $select);
+                $row = str_replace($select, $select_replaced, $row);
+            }
+        }
 
         foreach ($this->jsTemplates as $js) {
-            $this->getView()->registerJs(strtr($js, ['{multiple-index}' => $index]), View::POS_READY);
+            $this->getView()->registerJs(str_replace(['%7Bmultiple-index%7D', '{multiple-index}'], $index, $js), View::POS_READY);
         }
         return $row;
     }
@@ -353,11 +428,11 @@ class Widget extends InputWidget
      */
     public function getElementName($name, $index = null)
     {
-        if ($index === null) {
+        if (is_null($index)) {
             $index = '{multiple-index}';
         }
         return $this->getInputNamePrefix($name) . (
-            '[' . $index . '][' . $name . ']'
+        count($this->columns) > 1 ? '[' . $index . '][' . $name . ']' : '[' . $name . '][' . $index . ']'
         );
     }
 
@@ -406,7 +481,7 @@ class Widget extends InputWidget
     public function registerClientScript()
     {
         $view = $this->getView();
-        MultinputAsset::register($view);
+        Asset::register($view);
         $options = Json::encode(
             [
                 'id' => $this->getId(),

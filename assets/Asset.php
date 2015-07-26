@@ -14,13 +14,15 @@ use yii\web\AssetBundle;
  * Class MultipleInputAsset
  * @package unclead\widgets\assets
  */
-class MultinputAsset extends AssetBundle
+class Asset extends AssetBundle
 {
     public $css = [
         'css/multiple-input.css'
     ];
 
-    public $js = [];
+    public $js = [
+        'js/jquery.multipleInput.js'
+    ];
 
     public $depends = [
         'yii\web\JqueryAsset'
@@ -28,10 +30,9 @@ class MultinputAsset extends AssetBundle
 
     public function init()
     {
+
+        $this->publishOptions = ['forceCopy' => YII_ENV_DEV];
         $this->sourcePath = __DIR__ . '/src/';
-        $this->js = [
-            YII_DEBUG ? 'js/jquery.multipleInput.js' : 'js/jquery.multipleInput.min.js'
-        ];
         parent::init();
     }
 

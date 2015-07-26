@@ -71,6 +71,9 @@
                 }
                 wrapper.trigger('init');
             }, 100);
+
+
+
         },
 
         addInput: function () {
@@ -104,7 +107,7 @@
 
             var jsTemplate;
             for (i in settings.jsTemplates) {
-                jsTemplate = settings.jsTemplates[i].replaceAll('{multiple-index}', data.currentIndex);
+                jsTemplate = settings.jsTemplates[i].replaceAll('{multiple-index}', data.currentIndex).replaceAll('%7Bmultiple-index%7D', data.currentIndex);
                 window.eval(jsTemplate);
             }
             methods.showActions.apply(this);
@@ -156,7 +159,9 @@
         removeAttribute: function () {
             var id = $(this).attr('id');
             var form = $('#' + $(this).attr('id')).closest('form');
-            form.yiiActiveForm('remove', id);
+            try {
+                form.yiiActiveForm('remove', id);
+            } catch (e) {};
         },
 
         hideActions: function () {

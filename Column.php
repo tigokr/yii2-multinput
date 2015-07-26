@@ -149,7 +149,7 @@ class Column extends Object
                 $value = $this->defaultValue;
             }
         }
-        return is_array($value) ? Json::encode($value) : $value;
+        return $value;
     }
 
     /**
@@ -186,10 +186,17 @@ class Column extends Object
                 if (method_exists('yii\helpers\Html', $type)) {
                     $input = Html::$type($name, $value, $options);
                 } elseif (class_exists($type) && method_exists($type, 'widget')) {
-                    $input = $type::widget(array_merge($options, [
-                        'name'  => $name,
-                        'value' => $value,
-                    ]));
+
+                    try {
+                        $input = $type::widget(array_merge($options, [
+                            'name' => $name,
+                            'value' => $value,
+                        ]));
+                    } catch (\yii\base\InvalidParamException $e) {
+                        $input = $type::widget(array_merge($options, [
+                            'name' => $name,
+                        ]));
+                    }
                 } else {
                     throw new InvalidConfigException("Invalid column type '$type'");
                 }
