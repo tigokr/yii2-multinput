@@ -274,7 +274,6 @@ class Widget extends InputWidget
     private function getRow($render_action, $data)
     {
 
-        $row = '';
         $cells = [];
         $hiddenInputs = [];
         foreach ($this->columns as $columnIndex => $column) {
@@ -370,7 +369,7 @@ class Widget extends InputWidget
         $matches = [];
         if (preg_match_all('/<select[^>]*?data\-selected\-option="(.*?)".*?<\/select>/is', $row, $matches)) {
             foreach ($matches[0] as $k => $select) {
-                $select_replaced = preg_replace('/(value="' . $matches[1][$k] . '")([^>]*?)>/is', '${1} selected${2}>', $select);
+                $select_replaced = preg_replace('/(value="' . preg_quote($matches[1][$k]) . '")/is', '${1} selected', $select);
                 $row = str_replace($select, $select_replaced, $row);
             }
         }
@@ -396,19 +395,13 @@ class Widget extends InputWidget
         $search = ['{multiple-index}', '{multiple-btn-action}', '{multiple-btn-type}'];
         $replace = [$index, $btnAction, $btnType];
 
-//        foreach ($this->columns as $column) {
-//            /* @var $column Column */
-//            $search[] = '{multiple-' . $column->name . '-value}';
-//            $replace[] = $column->prepareValue($data);
-//        }
-
         $row = str_replace($search, $replace, $this->getRow($render_action, $data));
 
         /* select boxes selection */
         $matches = [];
         if (preg_match_all('/<select[^>]*?data\-selected\-option="(.*?)".*?<\/select>/is', $row, $matches)) {
             foreach ($matches[0] as $k => $select) {
-                $select_replaced = preg_replace('/(value="' . $matches[1][$k] . '")([^>]*?)>/is', '${1} selected${2}>', $select);
+                $select_replaced = preg_replace('/(value="' . preg_quote($matches[1][$k]) . '")/is', '${1} selected', $select);
                 $row = str_replace($select, $select_replaced, $row);
             }
         }
